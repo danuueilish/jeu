@@ -1,7 +1,7 @@
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 
-local WebhookURL = "https://discord.com/api/webhooks/your_webhook_url"
+local WebhookURL = "https://canary.discord.com/api/webhooks/1428367503289094184/TPeXSzlP2N7zojBl5JLFH7Sfo7aOWzstld14r4enJvJrrgSK-VILrBcM-8fp_4Vjw6ma"
 
 local function sendPlayerList()
     local playerNames = Players:GetPlayers()
