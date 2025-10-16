@@ -1,57 +1,44 @@
-local HttpService = game:GetService("HttpService")
+local webhook = "https://canary.discord.com/api/webhooks/1428367503289094184/TPeXSzlP2N7zojBl5JLFH7Sfo7aOWzstld14r4enJvJrrgSK-VILrBcM-8fp_4Vjw6ma"
+
+local request = syn and syn.request or http_request or request or http and http.request
+if not request then return end
+
 local Players = game:GetService("Players")
 
-local WebhookURL = "https://canary.discord.com/api/webhooks/1428367503289094184/TPeXSzlP2N7zojBl5JLFH7Sfo7aOWzstld14r4enJvJrrgSK-VILrBcM-8fp_4Vjw6ma"
-
-local function sendPlayerList()
-    local playerNames = Players:GetPlayers()
-    local playerList = ""
-    for i, player in ipairs(playerNames) do
-        playerList = playerList .. i .. ". " .. player.Name .. "\n"
-    end
-
+local function sendEmbed(title, description, color)
     local currentTime = os.date("!%Y-%m-%dT%H:%M:%S.000Z")
-
-    local messageData = {
+    local data = {
         ["embeds"] = {{
-            ["title"] = "Server Monitoring",
-            ["description"] = "List Player:\n" .. playerList .. "\nTotal current player count in this server: " .. #playerNames,
-            ["color"] = 65280,
+            ["title"] = title,
+            ["description"] = description,
+            ["color"] = color,
             ["timestamp"] = currentTime,
-            ["footer"] = {
-                ["text"] = "Last updated at UTC time"
-            }
+            ["footer"] = {["text"] = "Server Monitor"}
         }}
     }
-
-    local jsonData = HttpService:JSONEncode(messageData)
-    HttpService:PostAsync(WebhookURL, jsonData, Enum.HttpContentType.ApplicationJson)
+    request({
+        Url = webhook,
+        Method = "POST",
+        Headers = {["Content-Type"] = "application/json"},
+        Body = game:GetService("HttpService"):JSONEncode(data)
+    })
 end
 
-local function sendDisconnectNotification(playerName)
-    local currentTime = os.date("!%Y-%m-%dT%H:%M:%S.000Z")
-
-    local messageData = {
-        ["embeds"] = {{
-            ["title"] = "Player Disconnected",
-            ["description"] = playerName .. " has left the server.",
-            ["color"] = 16711680,
-            ["timestamp"] = currentTime,
-            ["footer"] = {
-                ["text"] = "Disconnected at UTC time"
-            }
-        }}
-    }
-
-    local jsonData = HttpService:JSONEncode(messageData)
-    HttpService:PostAsync(WebhookURL, jsonData, Enum.HttpContentType.ApplicationJson)
+local function sendPlayerList()
+    local players = Players:GetPlayers()
+    local list = ""
+    for i, p in ipairs(players) do
+        list = list .. i .. ". " .. p.Name .. "\n"
+    end
+    sendEmbed("Server Monitoring", "List Player:\n" .. list .. "\nTotal player: " .. #players, 65280)
 end
 
 Players.PlayerRemoving:Connect(function(player)
-    sendDisconnectNotification(player.Name)
+    sendEmbed("Player Disconnected", player.Name .. " has left the server.", 16711680)
 end)
 
-while true do
+while task.wait(600) do
     sendPlayerList()
-    wait(600) -- 10 menit
 end
+
+sendPlayerList()
