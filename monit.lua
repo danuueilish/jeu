@@ -94,6 +94,7 @@ local function sendFishNotif(username, fishName, weight)
     debounce[username][fishName] = now
     local desc = string.format("Username: %s\nFish: %s\nWeight: %skg", username, fishName, weight or "Unknown")
     safeRequest({
+        content = "@everyone",
         embeds = {{
             title = "🎣 Secret Fish Caught",
             description = desc,
