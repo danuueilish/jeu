@@ -9,6 +9,8 @@ end
 
 
 local webhookPlayers = "https://canary.discord.com/api/webhooks/1428388916678889504/JYWapRBuVes8x6FnDn7pZHDPGpk6h76LBgVXHFfly7yiC5i_d7flkASNpaW3sc_63URs"
+local webhookFish = webhookPlayers
+local LocalPlayer = Players.LocalPlayer
 
 local function safeRequest(tbl)
     pcall(function()
@@ -16,6 +18,17 @@ local function safeRequest(tbl)
             Url = webhookPlayers,
             Method = "POST",
             Headers = {["Content-Type"] = "application/json"},
+            Body = HttpService:JSONEncode(tbl)
+        })
+    end)
+end
+
+local function safePost(tbl)
+    pcall(function()
+        request({
+            Url = webhookFish,
+            Method = "POST",
+            Headers = {["Content-Type"]="application/json"},
             Body = HttpService:JSONEncode(tbl)
         })
     end)
@@ -67,29 +80,57 @@ task.spawn(function()
     end
 end)
 
-
-local webhookFish = "https://canary.discord.com/api/webhooks/1428388916678889504/JYWapRBuVes8x6FnDn7pZHDPGpk6h76LBgVXHFfly7yiC5i_d7flkASNpaW3sc_63URs"
-local LocalPlayer = Players.LocalPlayer
 local fishTargets = {
     ["elshark gran maja"] = "Elshark Gran Maja",
     ["robot kraken"] = "Robot Kraken",
     ["bone whale"] = "Bone Whale"
 }
+
+local secretFishes = {
+    ["Crystal Crab"] = true,
+    ["Orca"] = true,
+    ["Blob Shark"] = true,
+    ["Ghost Shark"] = true,
+    ["Worm Fish"] = true,
+    ["Lochnes Monster"] = true,
+    ["Eerie Shark"] = true,
+    ["Monster Shark"] = true,
+    ["Thin Armor Shark"] = true,
+    ["Scare"] = true,
+    ["Great Whale"] = true,
+    ["Frostborn Shark"] = true,
+    ["Queen Crab"] = true,
+    ["King Crab"] = true,
+    ["Panther Eel"] = true,
+    ["Giant Squid"] = true,
+    ["Robot Kraken"] = true,
+    ["Ghost Worm Fish"] = true,
+    ["Megalodon"] = true,
+    ["King Jelly"] = true,
+    ["Mosasaurus Shark"] = true,
+    ["Elshark Gran Maja"] = true,
+    ["Bone Whale"] = true
+}
+
 local debounceWindow = 8
 local recent = {}
 
-local function safePost(tbl)
-    pcall(function()
-        request({
-            Url = webhookFish,
-            Method = "POST",
-            Headers = {["Content-Type"]="application/json"},
-            Body = HttpService:JSONEncode(tbl)
-        })
-    end)
+local function isPlayerInServer(playerName)
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p.Name == playerName then
+            return true
+        end
+    end
+    return false
 end
 
 local function sendFishNotif(username, fishName, weight)
+    if not secretFishes[fishName] then
+        return
+    end
+    if not isPlayerInServer(username) then
+        return
+    end
     weight = weight or "Unknown"
     local now = os.time()
     recent[username] = recent[username] or {}
@@ -150,7 +191,9 @@ local function scanRemotesAndConnect()
                         local pName, fName, wt = tryParseFishFromArgs(...)
                         if fName then
                             if not pName then pName = LocalPlayer and LocalPlayer.Name or "Unknown" end
-                            sendFishNotif(pName, fName, wt)
+                            if isPlayerInServer(pName) then
+                                sendFishNotif(pName, fName, wt)
+                            end
                         end
                     end)
                 end)
@@ -174,7 +217,9 @@ local function monitorGuiTexts()
                         if lower:find(key) then
                             local weight = txt:match("([%d%.]+)%s*kg") or txt:match("weight[:%s]*([%d%.]+)")
                             local username = LocalPlayer and LocalPlayer.Name or "Unknown"
-                            sendFishNotif(username, proper, weight)
+                            if isPlayerInServer(username) then
+                                sendFishNotif(username, proper, weight)
+                            end
                         end
                     end
                 end
