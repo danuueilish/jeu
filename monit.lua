@@ -73,14 +73,14 @@ local function sendPlayerList()
         list = list .. i .. ". " .. p.DisplayName .. " (@" .. p.Name .. ")\n"
     end
     local luck, timer = getServerLuck()
-    local desc = "Player Online:\n" .. list .. "\nTotal player: " .. #players .. "\nCurrent Server Luck: " .. luck
+    local desc = "<:players:1365290081937526834> Player Online:\n" .. list .. "\n<:stats:1365955343221264564> Total player: " .. #players .. "\n🍀 Current Server Luck: " .. luck
     if luck ~= "No Luck Active" then
         desc = desc .. " (" .. timer .. ")"
     end
-    sendEmbed("🟢 Server Monitoring", desc, 65280)
+    sendEmbed("<:emoji_41:1377279038200086660> Server Monitoring", desc, 65280)
 end
 
-sendEmbed("🟢 Monitoring Account Joined", LocalPlayer.DisplayName .. " (@" .. LocalPlayer.Name .. ") has joined the server.", 65280)
+sendEmbed("<:changes:1365295949811028068> Monitoring Account Reconnected", LocalPlayer.DisplayName .. " (@" .. LocalPlayer.Name .. ") has joined the server.", 65280)
 
 local sentJoin, sentLeave = {}, {}
 
@@ -154,7 +154,7 @@ local function sendFishNotif(username, fishName, weight)
     safeRequest({
         content = "@everyone",
         embeds = {{
-            title = "🎣 Secret Fish Caught",
+            title = "<:fish:1365955309524353024> Secret Fish Caught",
             description = desc,
             color = 16776960,
             timestamp = os.date("!%Y-%m-%dT%H:%M:%S.000Z"),
