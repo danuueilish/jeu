@@ -31,25 +31,33 @@ end
 
 local function getServerLuck()
     local success, luckText, timerText = pcall(function()
-        local playerGui = game:GetService("Players").LocalPlayer:FindFirstChild("PlayerGui")
+        local playerGui = LocalPlayer:FindFirstChild("PlayerGui")
         if not playerGui then return "No Luck Active", "Unknown" end
 
         local eventsFrame = playerGui:FindFirstChild("Events") and playerGui.Events:FindFirstChild("Frame")
-        if not eventsFrame then return "No Luck Active", "Unknown" end
+        local multiplier = "No Luck Active"
+        if eventsFrame then
+            local serverLuck = eventsFrame:FindFirstChild("Server Luck")
+            if serverLuck and serverLuck:FindFirstChild("Server") then
+                local luckLabel = serverLuck.Server:FindFirstChild("LuckCounter")
+                if luckLabel and luckLabel.Text and luckLabel.Text ~= "" then
+                    multiplier = luckLabel.Text
+                end
+            end
+        end
 
-        local serverLuck = eventsFrame:FindFirstChild("Server Luck")
-        if not serverLuck then return "No Luck Active", "Unknown" end
+        local store = playerGui:FindFirstChild("Exclusive Store")
+        local timer = "Unknown"
+        if store and store:FindFirstChild("Main") then
+            local item = store.Main.Content.Items:FindFirstChild("Server Luck")
+            local inside = item and item:FindFirstChild("Inside")
+            local timerLabel = inside and inside:FindFirstChild("Timer")
+            if timerLabel and timerLabel.Text and timerLabel.Text ~= "" then
+                timer = timerLabel.Text
+            end
+        end
 
-        local server = serverLuck:FindFirstChild("Server")
-        if not server then return "No Luck Active", "Unknown" end
-
-        local luckLabel = server:FindFirstChild("LuckCounter")
-        local timerLabel = server:FindFirstChild("Label")
-
-        local luckText = (luckLabel and luckLabel.Text ~= "") and luckLabel.Text or "No Luck Active"
-        local timerText = (timerLabel and timerLabel.Text ~= "") and timerLabel.Text or "Unknown"
-
-        return luckText, timerText
+        return multiplier, timer
     end)
 
     if success then
@@ -65,7 +73,7 @@ local function sendPlayerList()
         list = list .. i .. ". " .. p.DisplayName .. " (@" .. p.Name .. ")\n"
     end
     local luck, timer = getServerLuck()
-    local desc = "Player Online:\n" .. list .. "\nTotal player: " .. #players .. "\nCurrent Server Luck: " .. luck
+    local desc = "Player Online:\n" .. list .. "\n\nTotal player: " .. #players .. "\nCurrent Server Luck: " .. luck
     if luck ~= "No Luck Active" then
         desc = desc .. " (Ends: " .. timer .. ")"
     end
