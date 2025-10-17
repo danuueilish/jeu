@@ -112,7 +112,7 @@ end)
 
 task.spawn(function()
     sendPlayerList()
-    while task.wait(600) do
+    while task.wait(300) do
         sendPlayerList()
     end
 end)
