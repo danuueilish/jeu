@@ -1,9 +1,14 @@
 local webhook = "https://canary.discord.com/api/webhooks/1428388916678889504/JYWapRBuVes8x6FnDn7pZHDPGpk6h76LBgVXHFfly7yiC5i_d7flkASNpaW3sc_63URs"
-local request = (syn and syn.request) or (http and http.request) or request or http_request or (fluxus and fluxus.request)
-if not request then return end
+
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 local TextChatService = game:GetService("TextChatService")
+
+local request = (syn and syn.request) or (http and http.request) or request or http_request or (fluxus and fluxus.request)
+if not request then
+    warn("Executor kamu tidak mendukung HTTP request!")
+    return
+end
 
 local function safeRequest(tbl)
     pcall(function()
@@ -16,8 +21,9 @@ local function safeRequest(tbl)
     end)
 end
 
-local function sendEmbed(title, desc, color)
+local function sendEmbed(title, desc, color, everyone)
     safeRequest({
+        content = everyone and "@everyone" or nil,
         embeds = {{
             title = title,
             description = desc,
@@ -32,23 +38,16 @@ local function sendPlayerList()
     local players = Players:GetPlayers()
     local list = ""
     for i, p in ipairs(players) do
-        list = list .. i .. ". " .. p.Name .. "\n"
+        list ..= i .. ". " .. p.Name .. "\n"
     end
     sendEmbed("🟢 Server Monitoring", "List Player:\n" .. list .. "\nTotal player: " .. #players, 65280)
 end
 
-local sentJoin, sentLeave = {}
 Players.PlayerAdded:Connect(function(player)
-    if sentJoin[player.UserId] then return end
-    sentJoin[player.UserId] = true
-    sentLeave[player.UserId] = nil
     sendEmbed("🔵 Player Joined", player.Name .. " has joined the server.", 65280)
 end)
 
 Players.PlayerRemoving:Connect(function(player)
-    if sentLeave[player.UserId] then return end
-    sentLeave[player.UserId] = true
-    sentJoin[player.UserId] = nil
     sendEmbed("🔴 Player Disconnected", player.Name .. " has left the server.", 16711680)
 end)
 
@@ -60,28 +59,28 @@ task.spawn(function()
 end)
 
 local secretFishes = {
-    ["Elshark Gran Maja"] = true,
-    ["Robot Kraken"] = true,
-    ["Bone Whale"] = true,
-    ["Crystal Crab"] = true,
-    ["Orca"] = true,
-    ["Blob Shark"] = true,
-    ["Ghost Shark"] = true,
-    ["Worm Fish"] = true,
-    ["Lochnes Monster"] = true,
-    ["Eerie Shark"] = true,
-    ["Monster Shark"] = true,
-    ["Thin Armor Shark"] = true,
-    ["Great Whale"] = true,
-    ["Frostborn Shark"] = true,
-    ["Queen Crab"] = true,
-    ["King Crab"] = true,
-    ["Panther Eel"] = true,
-    ["Giant Squid"] = true,
-    ["Ghost Worm Fish"] = true,
-    ["Megalodon"] = true,
-    ["King Jelly"] = true,
-    ["Mosasaurus Shark"] = true
+    ["elshark gran maja"] = true,
+    ["robot kraken"] = true,
+    ["bone whale"] = true,
+    ["crystal crab"] = true,
+    ["orca"] = true,
+    ["blob shark"] = true,
+    ["ghost shark"] = true,
+    ["worm fish"] = true,
+    ["lochnes monster"] = true,
+    ["eerie shark"] = true,
+    ["monster shark"] = true,
+    ["thin armor shark"] = true,
+    ["great whale"] = true,
+    ["frostborn shark"] = true,
+    ["queen crab"] = true,
+    ["king crab"] = true,
+    ["panther eel"] = true,
+    ["giant squid"] = true,
+    ["ghost worm fish"] = true,
+    ["megalodon"] = true,
+    ["king jelly"] = true,
+    ["mosasaurus shark"] = true
 }
 
 local debounce = {}
@@ -92,38 +91,36 @@ local function sendFishNotif(username, fishName, weight)
     debounce[username] = debounce[username] or {}
     if debounce[username][fishName] and now - debounce[username][fishName] < debounceDelay then return end
     debounce[username][fishName] = now
-    local desc = string.format("Username: %s\nFish: %s\nWeight: %skg", username, fishName, weight or "Unknown")
-    safeRequest({
-        content = "@everyone",
-        embeds = {{
-            title = "🎣 Secret Fish Caught",
-            description = desc,
-            color = 16776960,
-            timestamp = os.date("!%Y-%m-%dT%H:%M:%S.000Z"),
-            footer = { text = "Fishing Monitor" }
-        }}
-    })
+    local desc = string.format("Username: %s\nFish: %s\nWeight: %s Kg", username, fishName, weight or "Unknown")
+    sendEmbed("🎣 Secret Fish Caught", desc, 16776960, true)
 end
 
-local function onChatMessage(text)
-    local username, fish, weight = text:match("%[Server%]:%s*(%w+)%s+obtained a%s+([%w%s]+)%s*%(([%d%.]+)kg%)")
-    if username and fish and weight then
-        fish = fish:gsub("%s+$", "")
-        if secretFishes[fish] then
+local function onChatMessage(msg)
+    local text = msg.Text or msg
+    text = text:gsub("%s+", " "):lower()
+    local username, fish, weight = text:match("%[server%]%s*[:%-]%s*([%w_]+)%s+[%w%s]*%s+([%a%s]+)%s*%(([%d%.]+)%s*kg%)")
+    if username and fish then
+        fish = fish:gsub("^%s*(.-)%s*$", "%1")
+        if secretFishes[fish:lower()] then
             sendFishNotif(username, fish, weight)
         end
     end
 end
 
 task.spawn(function()
-    local channels = TextChatService:WaitForChild("TextChannels")
-    for _, channel in ipairs(channels:GetChildren()) do
-        if channel.Name:lower():find("general") then
-            channel.MessageReceived:Connect(function(message)
-                onChatMessage(message.Text)
-            end)
+    local function hookChannel(channel)
+        channel.MessageReceived:Connect(onChatMessage)
+    end
+    for _, ch in ipairs(TextChatService:GetChildren()) do
+        if ch:IsA("TextChannel") then
+            hookChannel(ch)
         end
     end
+    TextChatService.ChildAdded:Connect(function(ch)
+        if ch:IsA("TextChannel") then
+            hookChannel(ch)
+        end
+    end)
 end)
 
 for _, v in ipairs(Players:GetPlayers()) do
