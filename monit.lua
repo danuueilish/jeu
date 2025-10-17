@@ -58,7 +58,7 @@ local function sendPlayerList()
         list = list .. i .. ". " .. p.DisplayName .. " (@" .. p.Name .. ")\n"
     end
     local luck, timer = getServerLuck()
-    local desc = "Player Online:\n" .. list .. "Total player: " .. #players .. "\nCurrent Server Luck: " .. luck .. " (" .. timer .. ")"
+    local desc = "Player Online:\n" .. list .. "\nTotal player: " .. #players .. "\nCurrent Server Luck: " .. luck .. " (" .. timer .. ")"
     sendEmbed("🟢 Server Monitoring", desc, 65280)
 end
 
