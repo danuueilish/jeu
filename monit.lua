@@ -31,22 +31,31 @@ end
 
 local function getServerLuck()
     local success, luckText, timerText = pcall(function()
-        local store = game:GetService("Players").LocalPlayer.PlayerGui:FindFirstChild("Exclusive Store")
-        if not store then return "Unknown", "Unknown" end
-        local item = store.Main.Content.Items:FindFirstChild("Server Luck")
-        if not item then return "Unknown", "Unknown" end
-        local inside = item:FindFirstChild("Inside")
-        local timer = inside and inside:FindFirstChild("Timer")
-        local visual = item:FindFirstChild("Content") and item.Content:FindFirstChild("Visual")
-        local counter = visual and visual:FindFirstChild("NextLuckCounter")
-        local luckText = counter and counter.Text or "Unknown"
-        local timerText = timer and timer.Text or "Unknown"
+        local playerGui = game:GetService("Players").LocalPlayer:FindFirstChild("PlayerGui")
+        if not playerGui then return "No Luck Active", "Unknown" end
+
+        local eventsFrame = playerGui:FindFirstChild("Events") and playerGui.Events:FindFirstChild("Frame")
+        if not eventsFrame then return "No Luck Active", "Unknown" end
+
+        local serverLuck = eventsFrame:FindFirstChild("Server Luck")
+        if not serverLuck then return "No Luck Active", "Unknown" end
+
+        local server = serverLuck:FindFirstChild("Server")
+        if not server then return "No Luck Active", "Unknown" end
+
+        local luckLabel = server:FindFirstChild("LuckCounter")
+        local timerLabel = server:FindFirstChild("Label")
+
+        local luckText = (luckLabel and luckLabel.Text ~= "") and luckLabel.Text or "No Luck Active"
+        local timerText = (timerLabel and timerLabel.Text ~= "") and timerLabel.Text or "Unknown"
+
         return luckText, timerText
     end)
+
     if success then
-        return luckText or "Unknown", timerText or "Unknown"
+        return luckText or "No Luck Active", timerText or "Unknown"
     end
-    return "Unknown", "Unknown"
+    return "No Luck Active", "Unknown"
 end
 
 local function sendPlayerList()
@@ -56,7 +65,10 @@ local function sendPlayerList()
         list = list .. i .. ". " .. p.DisplayName .. " (@" .. p.Name .. ")\n"
     end
     local luck, timer = getServerLuck()
-    local desc = "Player Online:\n" .. list .. "\nTotal player: " .. #players .. "\nCurrent Server Luck: " .. luck .. " (Ends: " .. timer .. ")"
+    local desc = "Player Online:\n" .. list .. "\nTotal player: " .. #players .. "\nCurrent Server Luck: " .. luck
+    if luck ~= "No Luck Active" then
+        desc = desc .. " (Ends: " .. timer .. ")"
+    end
     sendEmbed("🟢 Server Monitoring", desc, 65280)
 end
 
