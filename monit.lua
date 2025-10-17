@@ -73,17 +73,17 @@ local function sendPlayerList()
         list = list .. i .. ". " .. p.DisplayName .. " (@" .. p.Name .. ")\n"
     end
     local luck, timer = getServerLuck()
-    local desc = "Player Online:\n" .. list .. "\n\nTotal player: " .. #players .. "\nCurrent Server Luck: " .. luck
+    local desc = "Player Online:\n" .. list .. "\nTotal player: " .. #players .. "\nCurrent Server Luck: " .. luck
     if luck ~= "No Luck Active" then
         desc = desc .. " (" .. timer .. ")"
     end
     sendEmbed("🟢 Server Monitoring", desc, 65280)
 end
 
-local monitoringDisconnected = false
+sendEmbed("🟢 Monitoring Account Joined", LocalPlayer.DisplayName .. " (@" .. LocalPlayer.Name .. ") has joined the server.", 65280)
+
 local sentJoin, sentLeave = {}, {}
 
--- Perbaikan: Track player yang sudah ada saat script dimulai
 for _, player in ipairs(Players:GetPlayers()) do
     if player ~= LocalPlayer then
         sentJoin[player.UserId] = true
@@ -91,7 +91,7 @@ for _, player in ipairs(Players:GetPlayers()) do
 end
 
 Players.PlayerAdded:Connect(function(player)
-    task.wait(0.5) -- Delay sedikit untuk memastikan player benar-benar joined
+    task.wait(0.5)
     if player == LocalPlayer then return end
     if sentJoin[player.UserId] then return end
     sentJoin[player.UserId] = true
@@ -101,7 +101,6 @@ end)
 
 Players.PlayerRemoving:Connect(function(player)
     if player == LocalPlayer then
-        monitoringDisconnected = true
         sendEmbed("⚠️ Monitoring Account Disconnected", LocalPlayer.DisplayName .. " (@" .. LocalPlayer.Name .. ") has disconnected from the server.", 16753920)
         return
     end
@@ -109,13 +108,6 @@ Players.PlayerRemoving:Connect(function(player)
     sentLeave[player.UserId] = true
     sentJoin[player.UserId] = nil
     sendEmbed("🔴 Player Disconnected", player.DisplayName .. " (@" .. player.Name .. ") has left the server.", 16711680)
-end)
-
-Players.PlayerAdded:Connect(function(player)
-    if monitoringDisconnected and player == LocalPlayer then
-        monitoringDisconnected = false
-        sendEmbed("✅ Monitoring Account Reconnected", LocalPlayer.DisplayName .. " (@" .. LocalPlayer.Name .. ") has reconnected to the server.", 65280)
-    end
 end)
 
 task.spawn(function()
@@ -195,53 +187,3 @@ end)
 for _, v in ipairs(Players:GetPlayers()) do
     debounce[v.Name] = {}
 end
-
--- ========== COMMAND TESTING UNTUK CONSOLE ==========
-_G.testMonitoring = function()
-    print("Testing: Sending monitoring player list to Discord...")
-    sendPlayerList()
-    print("Monitoring test sent! Check your Discord webhook.")
-end
-
-_G.testJoined = function()
-    print("Testing: Sending player joined notification to Discord...")
-    local testPlayer = Players:GetPlayers()[1] or LocalPlayer
-    sendEmbed("🔵 Player Joined", testPlayer.DisplayName .. " (@" .. testPlayer.Name .. ") has joined the server. [TEST]", 65280)
-    print("Player joined test sent! Check your Discord webhook.")
-end
-
-_G.testDisconnected = function()
-    print("Testing: Sending player disconnected notification to Discord...")
-    local testPlayer = Players:GetPlayers()[1] or LocalPlayer
-    sendEmbed("🔴 Player Disconnected", testPlayer.DisplayName .. " (@" .. testPlayer.Name .. ") has left the server. [TEST]", 16711680)
-    print("Player disconnected test sent! Check your Discord webhook.")
-end
-
-_G.testSecretFish = function()
-    print("Testing: Sending secret fish notification to Discord...")
-    local testPlayer = Players:GetPlayers()[1] or LocalPlayer
-    local desc = string.format("Username: %s\nFish: %s\nWeight: %skg\n[TEST]", testPlayer.Name, "Megalodon", "999.99")
-    safeRequest({
-        content = "@everyone",
-        embeds = {{
-            title = "🎣 Secret Fish Caught",
-            description = desc,
-            color = 16776960,
-            timestamp = os.date("!%Y-%m-%dT%H:%M:%S.000Z"),
-            footer = { text = "Fishing Monitor" }
-        }}
-    })
-    print("Secret fish test sent! Check your Discord webhook.")
-end
-
-print("========================================")
-print("Discord Webhook Monitor Loaded!")
-print("========================================")
-print("Available test commands:")
-print("1. testMonitoring() - Test monitoring player list")
-print("2. testJoined() - Test player joined notification")
-print("3. testDisconnected() - Test player disconnected notification")
-print("4. testSecretFish() - Test secret fish notification")
-print("========================================")
-print("Example: Type in console: testMonitoring()")
-print("========================================")
