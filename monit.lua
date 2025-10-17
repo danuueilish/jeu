@@ -30,11 +30,11 @@ local function sendEmbed(title, desc, color)
 end
 
 local function getServerLuck()
-    local success, result = pcall(function()
+    local success, luckText, timerText = pcall(function()
         local store = game:GetService("Players").LocalPlayer.PlayerGui:FindFirstChild("Exclusive Store")
-        if not store then return nil end
+        if not store then return "Unknown", "Unknown" end
         local item = store.Main.Content.Items:FindFirstChild("Server Luck")
-        if not item then return nil end
+        if not item then return "Unknown", "Unknown" end
         local inside = item:FindFirstChild("Inside")
         local timer = inside and inside:FindFirstChild("Timer")
         local visual = item:FindFirstChild("Content") and item.Content:FindFirstChild("Visual")
@@ -43,10 +43,8 @@ local function getServerLuck()
         local timerText = timer and timer.Text or "Unknown"
         return luckText, timerText
     end)
-    if success and result then
-        local luck, timer = result, ""
-        if typeof(result) == "table" then luck, timer = unpack(result) end
-        return luck or "Unknown", timer or "Unknown"
+    if success then
+        return luckText or "Unknown", timerText or "Unknown"
     end
     return "Unknown", "Unknown"
 end
@@ -58,7 +56,7 @@ local function sendPlayerList()
         list = list .. i .. ". " .. p.DisplayName .. " (@" .. p.Name .. ")\n"
     end
     local luck, timer = getServerLuck()
-    local desc = "Player Online:\n" .. list .. "\nTotal player: " .. #players .. "\nCurrent Server Luck: " .. luck .. " (" .. timer .. ")"
+    local desc = "Player Online:\n" .. list .. "\nTotal player: " .. #players .. "\nCurrent Server Luck: " .. luck .. " (Ends: " .. timer .. ")"
     sendEmbed("🟢 Server Monitoring", desc, 65280)
 end
 
