@@ -7,6 +7,30 @@ local TextChatService = game:GetService("TextChatService")
 local LocalPlayer = Players.LocalPlayer
 
 local monitoringDisconnected = false
+local DEBUG_MODE = true
+
+local validEvents = {
+    ["Admin - Black Hole"] = true,
+    ["Admin - Ghost Worm"] = true,
+    ["Admin - Meteor Rain"] = true,
+    ["Admin - Shocked"] = true,
+    ["Admin - Super Luck"] = true,
+    ["Admin - Super Mutated"] = true,
+    ["Cloudy"] = true,
+    ["Day"] = true,
+    ["Ghost Shark Hunt"] = true,
+    ["Increased Luck"] = true,
+    ["Megalodon Hunt"] = true,
+    ["Mutated"] = true,
+    ["Night"] = true,
+    ["Radiant"] = true,
+    ["Shark Hunt"] = true,
+    ["Snow"] = true,
+    ["Sparkling Cove"] = true,
+    ["Storm"] = true,
+    ["Wind"] = true,
+    ["Worm Hunt"] = true
+}
 
 local function safeRequest(tbl)
     pcall(function()
@@ -80,16 +104,32 @@ local function getCurrentEvents()
         if not eventsContainer then return "None" end
 
         local activeEvents = {}
+        
         for _, eventFrame in ipairs(eventsContainer:GetChildren()) do
-            if eventFrame:IsA("Frame") or eventFrame:IsA("GuiObject") then
+            if eventFrame:IsA("GuiObject") then
                 local eventName = eventFrame.Name
-                if eventName and eventName ~= "" then
-                    table.insert(activeEvents, eventName)
+                
+                if validEvents[eventName] then
+                    if DEBUG_MODE then
+                        print("[DEBUG] Checking event:", eventName, "| Visible:", eventFrame.Visible, "| Size:", eventFrame.AbsoluteSize.Y)
+                    end
+                    
+                    if eventFrame.Visible and eventFrame.AbsoluteSize.Y > 0 then
+                        table.insert(activeEvents, eventName)
+                    end
                 end
             end
         end
 
         if #activeEvents == 0 then
+            if DEBUG_MODE then
+                print("[DEBUG] No active events found. All children:")
+                for _, child in ipairs(eventsContainer:GetChildren()) do
+                    if child:IsA("GuiObject") then
+                        print("  -", child.Name, "| Visible:", child.Visible, "| Size:", child.AbsoluteSize.Y)
+                    end
+                end
+            end
             return "None"
         end
 
@@ -98,6 +138,9 @@ local function getCurrentEvents()
 
     if success and eventsList then
         return eventsList
+    end
+    if DEBUG_MODE then
+        print("[DEBUG] getCurrentEvents failed")
     end
     return "None"
 end
@@ -184,8 +227,7 @@ local secretFishes = {
     ["Megalodon"] = true,
     ["King Jelly"] = true,
     ["Mosasaurus Shark"] = true,
-    ["Big Narwhal"] = true,
-    ["Narwhal"] = true
+    ["Enchant Stone"] = true
 }
 
 local debounce = {}
@@ -212,6 +254,7 @@ end
 
 local function onChatMessage(text)
     if monitoringDisconnected then return end
+    
     local username, fishName, weight, chance = text:match("%[Server%]:%s*(%S+)%s+obtained%s+a%s+(.-)%s*%((.-)%)%s+with%s+a%s+(.-)%s+chance!")
     
     if username and fishName and weight then
@@ -224,7 +267,7 @@ local function onChatMessage(text)
 end
 
 task.spawn(function()
-    local success = pcall(function()
+    local success, err = pcall(function()
         local channels = TextChatService:WaitForChild("TextChannels", 10)
         if channels then
             for _, channel in ipairs(channels:GetChildren()) do
@@ -241,10 +284,15 @@ task.spawn(function()
     end)
     
     if not success then
-        warn("Failed to connect to General chat channel")
+        warn("[ERROR] Failed to connect to chat channels:", err)
     end
 end)
 
 for _, v in ipairs(Players:GetPlayers()) do
     debounce[v.Name] = {}
 end
+
+print("===========================================")
+print("Fish Monitor Script Loaded!")
+print("Debug Mode:", DEBUG_MODE and "ON" or "OFF")
+print("===========================================")
