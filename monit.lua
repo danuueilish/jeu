@@ -6,6 +6,8 @@ local Players = game:GetService("Players")
 local TextChatService = game:GetService("TextChatService")
 local LocalPlayer = Players.LocalPlayer
 
+local monitoringDisconnected = false
+
 local function safeRequest(tbl)
     pcall(function()
         request({
@@ -91,6 +93,7 @@ for _, player in ipairs(Players:GetPlayers()) do
 end
 
 Players.PlayerAdded:Connect(function(player)
+    if monitoringDisconnected then return end
     task.wait(0.5)
     if player == LocalPlayer then return end
     if sentJoin[player.UserId] then return end
@@ -101,9 +104,11 @@ end)
 
 Players.PlayerRemoving:Connect(function(player)
     if player == LocalPlayer then
+        monitoringDisconnected = true
         sendEmbed("⚠️ Monitoring Account Disconnected", LocalPlayer.DisplayName .. " (@" .. LocalPlayer.Name .. ") has disconnected from the server.", 16753920)
         return
     end
+    if monitoringDisconnected then return end
     if sentLeave[player.UserId] then return end
     sentLeave[player.UserId] = true
     sentJoin[player.UserId] = nil
@@ -113,6 +118,7 @@ end)
 task.spawn(function()
     sendPlayerList()
     while task.wait(300) do
+        if monitoringDisconnected then break end
         sendPlayerList()
     end
 end)
@@ -139,18 +145,21 @@ local secretFishes = {
     ["Ghost Worm Fish"] = true,
     ["Megalodon"] = true,
     ["King Jelly"] = true,
-    ["Mosasaurus Shark"] = true
+    ["Mosasaurus Shark"] = true,
+    ["Big Narwhal"] = true,
+    ["Narwhal"] = true
 }
 
 local debounce = {}
 local debounceDelay = 8
 
-local function sendFishNotif(username, fishName, weight)
+local function sendFishNotif(username, fishName, weight, chance)
+    if monitoringDisconnected then return end
     local now = os.time()
     debounce[username] = debounce[username] or {}
     if debounce[username][fishName] and now - debounce[username][fishName] < debounceDelay then return end
     debounce[username][fishName] = now
-    local desc = string.format("Username: %s\nFish: %s\nWeight: %skg", username, fishName, weight or "Unknown")
+    local desc = string.format("Username: %s\nFish: %s\nWeight: %s\nChance: %s", username, fishName, weight or "Unknown", chance or "Unknown")
     safeRequest({
         content = "@everyone",
         embeds = {{
@@ -164,23 +173,37 @@ local function sendFishNotif(username, fishName, weight)
 end
 
 local function onChatMessage(text)
-    local username, fish, weight = text:match("%[Server%]:%s*(%w+)%s+obtained a%s+([%w%s]+)%s*%(([%d%.]+)kg%)")
-    if username and fish and weight then
-        fish = fish:gsub("%s+$", "")
-        if secretFishes[fish] then
-            sendFishNotif(username, fish, weight)
+    if monitoringDisconnected then return end
+    local username, fishName, weight, chance = text:match("%[Server%]:%s*(%S+)%s+obtained%s+a%s+(.-)%s*%((.-)%)%s+with%s+a%s+(.-)%s+chance!")
+    
+    if username and fishName and weight then
+        fishName = fishName:gsub("^%s*(.-)%s*$", "%1")
+        
+        if secretFishes[fishName] then
+            sendFishNotif(username, fishName, weight, chance or "Unknown")
         end
     end
 end
 
 task.spawn(function()
-    local channels = TextChatService:WaitForChild("TextChannels")
-    for _, channel in ipairs(channels:GetChildren()) do
-        if channel.Name:lower():find("general") then
-            channel.MessageReceived:Connect(function(message)
-                onChatMessage(message.Text)
-            end)
+    local success = pcall(function()
+        local channels = TextChatService:WaitForChild("TextChannels", 10)
+        if channels then
+            for _, channel in ipairs(channels:GetChildren()) do
+                if channel.Name == "RBXGeneral" then
+                    channel.MessageReceived:Connect(function(message)
+                        if monitoringDisconnected then return end
+                        pcall(function()
+                            onChatMessage(message.Text)
+                        end)
+                    end)
+                end
+            end
         end
+    end)
+    
+    if not success then
+        warn("Failed to connect to General chat channel")
     end
 end)
 
