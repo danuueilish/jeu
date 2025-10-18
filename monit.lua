@@ -68,6 +68,40 @@ local function getServerLuck()
     return "No Luck Active", "Unknown"
 end
 
+local function getCurrentEvents()
+    local success, eventsList = pcall(function()
+        local playerGui = LocalPlayer:FindFirstChild("PlayerGui")
+        if not playerGui then return "None" end
+
+        local eventsFrame = playerGui:FindFirstChild("Events")
+        if not eventsFrame or not eventsFrame:FindFirstChild("Frame") then return "None" end
+
+        local eventsContainer = eventsFrame.Frame:FindFirstChild("Events")
+        if not eventsContainer then return "None" end
+
+        local activeEvents = {}
+        for _, eventFrame in ipairs(eventsContainer:GetChildren()) do
+            if eventFrame:IsA("Frame") or eventFrame:IsA("GuiObject") then
+                local eventName = eventFrame.Name
+                if eventName and eventName ~= "" then
+                    table.insert(activeEvents, eventName)
+                end
+            end
+        end
+
+        if #activeEvents == 0 then
+            return "None"
+        end
+
+        return table.concat(activeEvents, ", ")
+    end)
+
+    if success and eventsList then
+        return eventsList
+    end
+    return "None"
+end
+
 local function sendPlayerList()
     local players = Players:GetPlayers()
     local list = ""
@@ -75,10 +109,14 @@ local function sendPlayerList()
         list = list .. i .. ". " .. p.DisplayName .. " (@" .. p.Name .. ")\n"
     end
     local luck, timer = getServerLuck()
+    local events = getCurrentEvents()
+    
     local desc = "<:players:1365290081937526834> Player Online:\n" .. list .. "\n<:stats:1365955343221264564> Total player: " .. #players .. "\n🍀 Current Server Luck: " .. luck
     if luck ~= "No Luck Active" then
         desc = desc .. " (" .. timer .. ")"
     end
+    desc = desc .. "\n🎉 Current Events: " .. events
+    
     sendEmbed("<:emoji_41:1377279038200086660> Server Monitoring", desc, 65280)
 end
 
