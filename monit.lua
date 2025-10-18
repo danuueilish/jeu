@@ -115,7 +115,7 @@ local function sendPlayerList()
     if luck ~= "No Luck Active" then
         desc = desc .. " (" .. timer .. ")"
     end
-    desc = desc .. "\n🎉 Current Events: " .. events
+    desc = desc .. "\n<:location:1365290076279541791> Current Events: " .. events
     
     sendEmbed("<:emoji_41:1377279038200086660> Server Monitoring", desc, 65280)
 end
